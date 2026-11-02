@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-MY">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PropDefect - 极简房屋缺陷与责任分析</title>
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            muji: {
+              bg: '#F9F6F0',
+              card: '#FFFFFF',
+              text: '#4A4643',
+              subtext: '#8C857B',
+              border: '#E8E3D9',
+              accent: '#7F2626',
+              accentHover: '#661F1F',
+              tagBg: '#F2ECE1'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #F9F6F0;
+      color: #4A4643;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-16">
+
+  <header class="border-b border-muji-border bg-muji-bg sticky top-0 z-50">
+    <div class="max-w-2xl mx-auto px-6 py-5 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-light tracking-wide text-muji-text">Prop<span class="font-normal text-muji-accent">Defect</span></h1>
+        <p class="text-xs text-muji-subtext mt-0.5">照片看一眼 · 责任说清楚</p>
+      </div>
+      <span class="text-[11px] bg-muji-tagBg text-muji-subtext px-2.5 py-1 rounded-full border border-muji-border">⚡ 免登录 AI 直连</span>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-6 pt-8">
+
+    <div class="bg-white rounded-lg p-6 mb-6 border border-muji-border shadow-sm">
+      <h2 class="text-lg font-normal mb-2 text-muji-text">遇到房屋缺陷，不知道该找谁？</h2>
+      <p class="text-xs leading-relaxed text-muji-subtext">
+        拍下家里的漏水、裂缝或破损照片，PropDefect 会结合马来西亚建筑与管理法令（Strata Management Act），帮你迅速厘清是<b>自己（业主 Owner）</b>负责，还是<b>物业管理处（Management）</b>的责任。
+      </p>
+    </div>
+
+    <div class="bg-white rounded-lg p-6 mb-6 border border-muji-border shadow-sm space-y-5">
+      <div>
+        <label class="block text-xs font-medium text-muji-text mb-1">1. 房屋类型</label>
+        <select id="propertyType" class="w-full bg-muji-bg border border-muji-border rounded p-2.5 text-sm text-muji-text outline-none focus:border-muji-accent">
+          <option value="High-rise Condominium/Apartment">高层公寓 / Condominium / Flat</option>
+          <option value="Landed House">有地住宅 / Landed (Terrace/Bungalow)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-muji-text mb-1">2. 拿钥匙交房多久了？ (DLP 保修期)</label>
+        <select id="dlpStatus" class="w-full bg-muji-bg border border-muji-border rounded p-2.5 text-sm text-muji-text outline-none focus:border-muji-accent">
+          <option value="Post-DLP (Over 24 Months)">交房已超过 2 年（保修期已过 Post-DLP）</option>
+          <option value="Within-DLP (Under 24 Months)">交房未满 2 年（仍在保修期内 Within-DLP）</option>
+        </select>
+        <p class="text-[11px] text-muji-subtext mt-1.5 leading-normal bg-muji-tagBg p-2 rounded">
+          💡 <b>什么是 DLP？</b> 新房交房后的 24 个月内称为保修期（Defect Liability Period）。过了保修期后，责任基本划分在“业主自己”或“大楼物业管理处”之间。
+        </p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg p-6 mb-6 border border-muji-border shadow-sm text-center">
+      <div id="previewGrid" class="grid grid-cols-3 gap-3 hidden mb-4"></div>
+
+      <div id="uploadBox" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-muji-border rounded-lg p-8 cursor-pointer hover:bg-muji-bg transition">
+        <div class="text-3xl mb-2 text-muji-subtext">📷</div>
+        <p class="text-sm text-muji-text font-medium mb-1">点击拍照或选取缺陷照片</p>
+        <p class="text-xs text-muji-subtext">最多可上传 3 张不同角度的照片</p>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple capture="environment" class="hidden" onchange="handleFileSelect(event)">
+
+      <button id="analyzeBtn" onclick="startAnalysis()" disabled class="w-full mt-5 bg-muji-accent hover:bg-muji-accentHover disabled:bg-muji-border text-white text-sm font-medium py-3 rounded transition shadow-sm">
+        <span id="btnText">开始智能分析归责方</span>
+      </button>
+    </div>
+
+    <div id="resultCard" class="hidden bg-white rounded-lg p-6 border border-muji-border shadow-md">
+      <div id="respBanner" class="p-4 rounded-lg mb-6 text-white text-center">
+        <span class="text-xs uppercase tracking-wider block opacity-90 mb-1">根据分析，该缺陷应由以下单位负责维修：</span>
+        <h3 id="resParty" class="text-2xl font-bold tracking-wide">--</h3>
+      </div>
+
+      <div class="space-y-4 text-sm leading-relaxed text-muji-text">
+        <div class="border-b border-muji-border pb-3">
+          <h4 class="text-xs font-semibold text-muji-subtext uppercase tracking-wider mb-1">缺陷名称与现状描述</h4>
+          <p id="resDefectName" class="font-medium text-base text-muji-text">--</p>
+        </div>
+
+        <div class="border-b border-muji-border pb-3">
+          <h4 class="text-xs font-semibold text-muji-subtext uppercase tracking-wider mb-1">为什么是他的责任？ (判定原因)</h4>
+          <p id="resReason" class="text-muji-text">--</p>
+        </div>
+
+        <div class="border-b border-muji-border pb-3">
+          <h4 class="text-xs font-semibold text-muji-subtext uppercase tracking-wider mb-1">法律与条款依据 (Malaysian Law)</h4>
+          <p id="resLegal" class="text-muji-subtext text-xs bg-muji-bg p-2.5 rounded">--</p>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-semibold text-muji-subtext uppercase tracking-wider mb-1">建议采取的下一步动作</h4>
+          <p id="resAction" class="text-muji-text">--</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let selectedFiles = [];
+
+    function handleFileSelect(e) {
+      const files = Array.from(e.target.files).slice(0, 3);
+      if (files.length === 0) return;
+
+      selectedFiles = [];
+      const grid = document.getElementById('previewGrid');
+      grid.innerHTML = '';
+      grid.classList.remove('hidden');
+
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          selectedFiles.push({ base64: evt.target.result, mimeType: file.type });
+          
+          const img = document.createElement('img');
+          img.src = evt.target.result;
+          img.className = 'h-24 w-full object-cover rounded border border-muji-border';
+          grid.appendChild(img);
+
+          if (selectedFiles.length > 0) {
+            document.getElementById('analyzeBtn').disabled = false;
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function startAnalysis() {
+      if (selectedFiles.length === 0) return;
+
+      const btnText = document.getElementById('btnText');
+      btnText.innerText = "🍃 AI 正在细心鉴定缺陷中...";
+      document.getElementById('analyzeBtn').disabled = true;
+
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            images: selectedFiles,
+            propertyType: document.getElementById('propertyType').value,
+            dlpStatus: document.getElementById('dlpStatus').value
+          })
+        });
+
+        const resData = await response.json();
+        if (!resData.success) {
+          alert(resData.error || "分析失败");
+          return;
+        }
+
+        const res = resData.data;
+        const party = res.responsibleParty;
+        const banner = document.getElementById('respBanner');
+        document.getElementById('resParty').innerText = party;
+
+        if (party.includes("业主")) {
+          banner.style.backgroundColor = '#7F2626';
+        } else {
+          banner.style.backgroundColor = '#2C5E43';
+        }
+
+        document.getElementById('resDefectName').innerText = res.defectName;
+        document.getElementById('resReason').innerText = res.reason;
+        document.getElementById('resLegal').innerText = res.legalBasis;
+        document.getElementById('resAction').innerText = res.actionPlan;
+
+        document.getElementById('resultCard').classList.remove('hidden');
+        document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+
+      } catch (err) {
+        alert("网络连接超时，请稍后重试。");
+      } finally {
+        btnText.innerText = "开始智能分析归责方";
+        document.getElementById('analyzeBtn').disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
